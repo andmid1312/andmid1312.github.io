@@ -4,7 +4,7 @@
 
 Spela: öppna `dist/index.html` i en webbläsare (fungerar offline, allt finns i filen). Online: https://andmid1312.github.io/fightingspelet/
 
-Nytt: tvåknappskombos (5-6 per figur, se hjälpsidorna i spelet), kedjekombos, retas-knapp (Y/U), fallande saker, yrsel. Skallen kastar mobiler och telefonlurar.
+Nytt: tvåknappskombos (5-6 per figur, se hjälpsidorna i spelet), kedjekombos, retas-knapp (Y/U), fallande saker, yrsel. Skallen kastar mobiler och telefonlurar. Ny fighter: Gullebullen / Isdrottningen.
 
 Musik: lägg en fil `music.mp3` bredvid `index.html` så spelas den i loop som bakgrundsmusik (M = musik av/på). Utan fil spelas en egen chiptune-slinga.
 
