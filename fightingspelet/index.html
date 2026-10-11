@@ -182,13 +182,13 @@ function readPad(n,shared){const p=makePad();const maps=shared?[KEYMAP[1],KEYMAP
 // ===== Figurer: data + ritning =====
 const CHARS=[
  {id:'bobban',name:'BOBBAN',base:'kim',H:78,Wd:24,speed:1.4,jump:-6.9,sleeve:'#6e5d3d',sleeveD:'#2c2414',skin:'#e7b088',pants:'#1a1a1e',shoe:'#0d0d0d',col:'#c9a35a',
-  sp:{name:'REPKAST',proj:'rope'},sp2:{name:'SVETSGNISTOR',type:'burst'},su:{name:'TORNERSPEL!',type:'knight'},fin:{name:'SKÄGGKITTEL',type:'tickle'},
-  quote:'SVETT, SVETS, SVETT, SKÄGG!',info:'SKÄGG, KAMOUFLAGEFLEECE. SUPER: RIDDARE MED SVETSMASK OCH LANS!'},
+  ex:'SKRUVA!',sp:{name:'KOFOTSKAST',proj:'crowbar'},sp2:{name:'SVETSGNISTOR',type:'burst'},su:{name:'VERKSTADSSTORMEN',type:'workshop'},fin:{name:'SKÄGGKITTEL',type:'tickle'},
+  quote:'SVETT, SVETS, SVETT, SKÄGG!',info:'SKÄGG, KAMOUFLAGEFLEECE, STOR KOFOT OCH STOR SKRUVMEJSEL – EN I VARJE HAND!'},
  {id:'balto',name:'HALTE BALTO',short:'BALTO',base:'bosse',quad:1,H:54,Wd:50,speed:1.85,jump:-7.4,col:'#d39a55',
   sp:{name:'VOFF!',proj:'voff'},sp2:{name:'NOSA-RUSNING',type:'dash'},su:{name:'BITRUSNING',type:'dashbite'},fin:{name:'SLICKATTACK',type:'lick'},
   quote:'VOFF VOFF! NU VILL JAG HA ETT BEN!',info:'KARAMELLBRUN PITBULL I GRÖN SELE. SNABB, BITER OCH SKÄLLER!'},
  {id:'skallen',name:'SKALLEN',base:'skallen',H:80,Wd:26,speed:1.35,jump:-6.7,sleeve:'#17171a',sleeveD:'#000',stripe:'#f4f4f4',skin:'#efc6a6',pants:'#17171a',shoe:'#f2f2f2',col:'#e9e9e9',
-  sp:{name:'MOBILKAST',proj:'phone'},sp2:{name:'SKALLE!',type:'dash'},su:{name:'SUPERSKALLEN',type:'power'},fin:{name:'DISCOSKALLE',type:'disco'},
+  ex:'RING RING!',sp:{name:'MOBILKAST',proj:'phone'},sp2:{name:'SKALLE!',type:'dash'},su:{name:'SUPERSKALLEN',type:'power'},fin:{name:'DISCOSKALLE',type:'disco'},
   quote:'STORT HUVUD – ÄNNU STÖRRE HJÄRTA!',info:'STORT HUVUD, SVARTVIT OVERALL. KASTAR MOBILER OCH TELEFONLURAR – RING RING!'},
  {id:'annie',name:'HELIKOPTERANNIE',short:'ANNIE',base:'annie',H:78,Wd:22,speed:1.5,jump:-6.9,sleeve:'#efc2a1',sleeveD:'#7a4a33',skin:'#efc2a1',pants:'#1e1e22',shoe:'#eeeeee',col:'#f1dc8a',
   sp:{name:'LÅDSAFT',proj:'saft'},sp2:{name:'HELI-SNURR',type:'rise'},su:{name:'PÅSSTORM',type:'heli'},fin:{name:'PÅSBERG',type:'bags'},
@@ -248,12 +248,14 @@ function drawSpriteChar(f){const c=f.ch,face=f.face,x=f.x,y=f.y;let b=c.base;if(
   if(f.pose==='down'&&!c.quad){yy=y-2;}
   // bakre påsar för Annie
   if(c.id==='annie'&&!['down','ko','sp2','heli'].includes(f.pose)&&f.pose!=='knight')drawBags(x-face*6,y-Hh*0.42,face,frame,false);
+  if(c.id==='bobban')drawBobbanTools(f,x+face*ox,yy,face,name,null,e,'back');
   spr(name,x+face*ox,yy,face,o);
   if(c.id==='annie'&&(f.pose==='sp2'||f.pose==='heli'))drawBags(x,y-Hh*0.62,face,frame,true);
-  if(arm){const sx=x+face*(ox+3),sy=y-Hh*arm.y*sc;const p=limb(sx,sy,face,arm.len,arm.ang,arm.w,c.sleeve,c.sleeveD,f.flash>0?'#fff':c.skin,arm.end);
+  let armEnd=null;if(arm){const sx=x+face*(ox+3),sy=y-Hh*arm.y*sc;const p=armEnd=limb(sx,sy,face,arm.len,arm.ang,arm.w,c.sleeve,c.sleeveD,f.flash>0?'#fff':c.skin,arm.end);
     if(c.stripe){ctx.strokeStyle=c.stripe;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx,sy+1);ctx.lineTo(p[0]-face*3,p[1]+1);ctx.stroke();}
-    if(e>0.9&&f.pose==='hp')swoosh(sx,sy,face,arm.len,'#fff');}
+    if(e>0.9&&f.pose==='hp'&&c.id!=='bobban')swoosh(sx,sy,face,arm.len,'#fff');}
   if(leg){const sx=x+face*(ox+1),sy=y-Hh*leg.y*sc;limb(sx,sy,face,leg.len,leg.ang,6,c.pants,'#000',c.shoe,7);if(c.stripe){ctx.strokeStyle=c.stripe;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(sx,sy-2);ctx.lineTo(sx+face*Math.cos(leg.ang)*leg.len*0.8,sy-2+Math.sin(leg.ang)*leg.len*0.8);ctx.stroke();}if(e>0.9)swoosh(sx,sy,face,leg.len*0.9);}
+  if(c.id==='bobban')drawBobbanTools(f,x+face*ox,yy,face,name,armEnd,e,'front');
   if(c.quad&&(f.pose==='lp'||f.pose==='hp'||f.pose==='clp')&&e>0.6){// tänder
     const mx=x+face*(ox+30),my=y-(f.pose==='clp'?20:36);ctx.fillStyle='#fff';for(let i=0;i<3;i++){ctx.fillRect(mx+face*i*3,my,2,3);ctx.fillRect(mx+face*i*3,my+7,2,-3);}}
   if(f.pose==='block'||f.pose==='cblock'){// armar i kors / skydd
@@ -341,8 +343,9 @@ function drawPortrait(c,x,y,w,h,opt={}){ctx.save();ctx.beginPath();ctx.rect(x,y,
   const s=opt.sc||(w/40);
   if(c.proc){ctx.translate(x+w/2,y+h);ctx.scale(s*0.9,s*0.9);ctx.translate(0,(c.H-36)*1);if(c.proc==='grokbot')drawGrokBot(fake,0,0,1);else if(c.proc==='gulle')drawGulle(fake,0,0,1);else drawGrok(fake,0,0,1);}
   else if(c.quad){ctx.translate(x+w/2-10*s,y+h+4*s);ctx.scale(s*0.95,s*0.95);fake.x=0;fake.y=0;spr('bosse-idle-0',0,0,1,{tint:opt.alt?'alt':null});}
-  else{const b=(c.id==='bobban'&&opt.costume===1)?'wedding':c.base;ctx.translate(x+w/2,y+h);ctx.scale(s*1.25,s*1.25);ctx.translate(0,c.H-34);spr(b+'-idle-0',0,0,1,{tint:opt.alt?'alt':null});}
-  ctx.restore();}
+  else{const b=(c.id==='bobban'&&opt.costume===1)?'wedding':c.base;ctx.translate(x+w/2,y+h);ctx.scale(s*1.25,s*1.25);ctx.translate(0,c.H-34);if(c.id==='bobban')drawBobbanTools(fake,0,0,1,b+'-idle-0',null,0,'back');spr(b+'-idle-0',0,0,1,{tint:opt.alt?'alt':null});if(c.id==='bobban')drawBobbanTools(fake,0,0,1,b+'-idle-0',null,0,'front');}
+  ctx.restore();
+  if(c.id==='bobban'&&w>=30){ctx.save();ctx.beginPath();ctx.rect(x,y,w,h);ctx.clip();drawCrowbar(x+w-18,y+h*0.62,1,-0.9,16);drawScrewdriver(x+w-4,y+h*0.62,-1,-0.9,15);ctx.restore();}}
 
 // ===== Banor med parallax och plattformar =====
 const LEAVES=[];for(let i=0;i<26;i++)LEAVES.push({x:Math.random()*STAGE_W,y:Math.random()*H,s:rnd(0.3,0.9),c:['#e0782a','#c9471c','#f2b33d','#a8521c'][i%4],p:Math.random()*6});
@@ -432,7 +435,7 @@ function doHit(att,def,dmg,o={}){const pad=def.lastPad||makePad();
   if(blk){def.hp-=dmg*0.12;def.state='block';def.stun=(o.hs||12)*0.7|0;def.pose=pad.down?'cblock':'block';def.vx=-def.face*(o.kb||2)*0.8;spark(hx,hy,true);SFX.block();att.meter=Math.min(100,att.meter+2);def.meter=Math.min(100,def.meter+3);M.stop=3;return 'block';}
   const d=dmg*(att.buff>0?1.4:1);def.hp-=d;def.flash=5;def.combo++;att.meter=Math.min(100,att.meter+d*1.2);def.meter=Math.min(100,def.meter+d*0.8);
   spark(hx,hy,false,o.big);SFX.hit(o.big);M.stop=o.big?8:5;if(o.big)shake(o.big===2?8:4);
-  if(att.ch.id==='bobban'&&Math.random()<0.4)floatText(hx,hy-10,'SVETS!','#7cff4a');
+  if(att.ch.id==='bobban'){SFX.clank();if(Math.random()<0.5)floatText(hx,hy-10,['KLONK!','PLING!','KLANG!'][Math.random()*3|0],'#ffd34a');}
   if(att.ch.quad&&Math.random()<0.5)floatText(hx,hy-10,'CHOMP!','#fff');
   if(def.combo>=2)M.cb={n:def.combo,side:att.n,t:70};
   if(def.state!=='dazed'){def.dz+=d;}
@@ -443,11 +446,11 @@ function doHit(att,def,dmg,o={}){const pad=def.lastPad||makePad();
   if(def.weld){def.weld=0;}def.act=null;return 'hit';}
 // starta attack
 function startMove(f,k){f.act={k,t:0,m:MOVES[k],hit:false};f.state='act';SFX.whoosh();}
-function startSpecial(f,ex){const s=f.ch.sp;if(PR.some(p=>p.owner===f&&!p.dead)){return;}f.act={k:'sp',t:0,ex,len:28};f.state='act';}
+function startSpecial(f,ex){const s=f.ch.sp;if(f.ch.id==='bobban'&&ex){f.act={k:'cb',key:'drill',c:DRILL,t:0,hits:0,hit:false};f.state='act';part({x:f.x,y:f.y-f.ch.H-18,vy:-0.4,type:'big',t:'SKRUVA!',col:'#f4c21a',life:50});SFX.clank();say('skruva');return;}if(PR.some(p=>p.owner===f&&!p.dead)){return;}f.act={k:'sp',t:0,ex,len:28};f.state='act';}
 function startSpecial2(f){f.act={k:'sp2',t:0,len:f.ch.sp2.type==='tele'?30:34,hits:0};f.state='act';if(f.ch.sp2.type==='rise'){f.vy=-5.5;f.onGround=false;f.vx=f.face*1.5;}if(f.ch.sp2.type==='dash')f.inv=6;floatText(f.x,f.y-f.ch.H-12,f.ch.sp2.name,'#ffd34a');SFX.shoot();}
 function startSuper(f){f.meter=0;f.act={k:'su',t:0,len:110,hits:0};f.state='act';M.freeze=50;M.freezeWho=f;SFX.super();say(f.ch.su.name.replace('!',''));shake(3);}
 function spawnProj(f,ex){let t=f.ch.sp.proj;if(f.ch.id==='skallen'&&ex)t='handset';if(f.ch.id==='gulle'&&ex)t='snowball';const p={owner:f,kind:t,x:f.x+f.face*24,y:f.y-f.ch.H*0.62,vx:f.face*(ex?4.2:3),vy:0,g:0,w:18,h:14,dmg:ex?11:8,life:160,dead:false,spin:0};
-  if(t==='voff'){p.y=f.y-34;SFX.voff();}else if(t==='saft'){p.vy=-2.4;p.g=0.1;p.vx=f.face*(ex?3.6:2.8);SFX.shoot();}else if(t==='hole'){p.vx=f.face*(ex?2:1.5);p.w=22;p.h=22;p.dmg=ex?12:10;SFX.shoot();}else if(t==='snowball'){p.w=20;p.h=20;p.freeze=50;p.vx=f.face*3.2;SFX.shoot();}else if(t==='ice'){SFX.freeze();}else if(t==='handset'){p.boom=1;p.dmg=11;SFX.ring();}else if(t==='phone'){SFX.shoot();}else if(t==='orb'){p.vx=f.face*(ex?5:3.8);SFX.shoot();}else SFX.shoot();
+  if(t==='crowbar'){p.boom=1;p.vx=f.face*3.8;p.w=24;p.h=18;p.dmg=9;SFX.clank();}else if(t==='voff'){p.y=f.y-34;SFX.voff();}else if(t==='saft'){p.vy=-2.4;p.g=0.1;p.vx=f.face*(ex?3.6:2.8);SFX.shoot();}else if(t==='hole'){p.vx=f.face*(ex?2:1.5);p.w=22;p.h=22;p.dmg=ex?12:10;SFX.shoot();}else if(t==='snowball'){p.w=20;p.h=20;p.freeze=50;p.vx=f.face*3.2;SFX.shoot();}else if(t==='ice'){SFX.freeze();}else if(t==='handset'){p.boom=1;p.dmg=11;SFX.ring();}else if(t==='phone'){SFX.shoot();}else if(t==='orb'){p.vx=f.face*(ex?5:3.8);SFX.shoot();}else SFX.shoot();
   if(ex)floatText(f.x,f.y-f.ch.H-12,'EXTRA!','#5ff3ff');PR.push(p);}
 function updateAct(f,pad){const a=f.act,o=opp(f);a.t++;
   if(a.m&&a.hit&&f.pr){const pr=f.pr;if(pr.hp&&(a.k==='lp'||a.k==='clp')){startMove(f,'hp');f.act.chain=1;return;}if(pr.lk&&(a.k==='lp'||a.k==='clp')){startMove(f,a.k==='clp'?'clk':'lk');return;}
@@ -468,7 +471,7 @@ function updateAct(f,pad){const a=f.act,o=opp(f);a.t++;
     else if(ty==='burst'){if(a.t%4===0)for(let i=0;i<4;i++)part({x:f.x+f.face*16,y:f.y-50,vx:f.face*rnd(0,3),vy:rnd(-3,1),g:0.15,col:i%2?'#fff36a':'#7cff4a',life:20});if(a.t===8||a.t===16){if(Math.abs(o.x-f.x)<46&&o.y>f.y-90){const r=doHit(f,o,6,{hs:16,kb:2,big:a.t===16?1:0});if(r==='ko')return 'ko';floatText(f.x+f.face*20,f.y-60,'SVETS!','#7cff4a');}}}
     if(a.t>=a.len){f.act=null;f.state=f.onGround?'stand':'air';}return;}
   if(a.k==='su'){const ty=f.ch.su.type;
-    if(ty==='knight'||ty==='dashbite'||ty==='heli'){f.pose=ty==='knight'?'knight':ty==='heli'?'sp2':'walk';if(ty==='heli'){f.y=Math.min(f.y,GROUND-30);f.onGround=false;f.vy=0;}f.walkT+=2;f.vx=f.face*5;
+    if(ty==='knight'||ty==='dashbite'||ty==='heli'||ty==='workshop'){f.pose=ty==='knight'?'knight':ty==='heli'||ty==='workshop'?'sp2':'walk';if(ty==='workshop'&&a.t%5===0){PR.push({owner:f,kind:'tool',t:(a.t/5|0)%3,x:f.x+rnd(-24,24),y:f.y-rnd(30,80),vx:f.face*rnd(1,3),vy:rnd(-2,0),g:0.12,w:12,h:12,dmg:2,life:60,dead:false,spin:0,rain:1});if(a.t%10===0)SFX.clank();}if(ty==='heli'){f.y=Math.min(f.y,GROUND-30);f.onGround=false;f.vy=0;}f.walkT+=2;f.vx=f.face*5;
       if(ty==='heli'&&a.t%8===0)PR.push({owner:f,kind:'bag',x:f.x+rnd(-20,20),y:f.y-20,vx:0,vy:1,g:0.15,w:10,h:10,dmg:3,life:80,dead:false,spin:0});
       if(Math.abs(o.x-f.x)<34&&a.hits<5&&a.t%6===0){a.hits++;const r=doHit(f,o,5.5,{hs:20,kb:0.5,big:a.hits===5?2:1,kd:a.hits===5});if(r==='ko')return 'ko';}
       if(a.t>70||f.x<14||f.x>STAGE_W-14||(a.hits>=5)){f.act=null;f.state=f.onGround?'stand':'air';f.vx=0;}return;}
@@ -486,7 +489,7 @@ function updateProj(){for(const p of PR){if(p.dead)continue;if(M.stop>0)continue
   for(const q of PR){if(q!==p&&!q.dead&&q.owner!==p.owner&&q.kind!=='bag'&&p.kind!=='bag'&&!p.rain&&!q.rain&&ov(hb,{x:q.x-q.w/2,y:q.y-q.h/2,w:q.w,h:q.h})){p.dead=q.dead=true;spark((p.x+q.x)/2,p.y,true,true);SFX.block();}}
   if(!p.dead&&ov(hb,hurt(o))){p.dead=true;const r=doHit(p.owner,o,p.dmg,{hs:p.rain?10:18,kb:p.rain?0.8:2.5,ry:0.6,low:p.low,kd:p.kd});if(r==='hit'&&p.freeze)freezeF(o,p.freeze);if(p.kind==='iceslide'&&r==='hit')floatText(o.x,o.y-o.ch.H-8,'HALKA!','#bff4ff');if(p.kind==='phone'||p.kind==='handset')floatText(p.x,p.y-12,p.kind==='phone'?'PLING!':'RING RING!','#5ff3ff');if(p.kind==='saft')for(let i=0;i<10;i++)part({x:p.x,y:p.y,vx:rnd(-2,2),vy:rnd(-3,0),g:0.2,col:'#e2233a',life:22});if(p.kind==='voff')floatText(p.x,p.y-10,'VOFF!','#fff36a');if(r==='ko')M.koBy=p.owner;}}
   PR=PR.filter(p=>!p.dead);}
-function drawProj(p){const x=p.x,y=p.y;if(drawCbProj(p))return;switch(p.kind){
+function drawProj(p){const x=p.x,y=p.y;if(drawToolProj(p))return;if(drawCbProj(p))return;switch(p.kind){
   case 'rope':ctx.strokeStyle='#2a6bd6';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.owner.x+p.owner.face*14,p.owner.y-p.owner.ch.H*0.62);ctx.quadraticCurveTo((x+p.owner.x)/2,y+10*Math.sin(p.spin),x,y);ctx.stroke();ctx.strokeStyle='#000';ctx.lineWidth=4;ctx.beginPath();ctx.ellipse(x,y,9,6,p.spin,0,7);ctx.stroke();ctx.strokeStyle='#3f8cff';ctx.lineWidth=2;ctx.stroke();break;
   case 'voff':for(let i=0;i<3;i++){ctx.strokeStyle=i%2?'#fff36a':'#fff';ctx.lineWidth=2;ctx.beginPath();const r=6+i*5+(frame%6);if(p.vx>0)ctx.arc(x-10,y,r,-0.8,0.8);else ctx.arc(x+10,y,r,Math.PI-0.8,Math.PI+0.8);ctx.stroke();}txt('VOFF',x,y-16,'#fff36a',1,'center');break;
   case 'saft':ctx.save();ctx.translate(x,y);ctx.rotate(p.spin*0.5);RO(-6,-7,12,14,'#e2233a');R(-6,-7,12,4,'#ffd34a');R(-3,-1,6,4,'#fff');R(2,-11,2,5,'#fff');ctx.strokeStyle='#000';ctx.lineWidth=1;ctx.strokeRect(-3,-10,6,3);ctx.restore();txt('SAFT',x,y-18,'#fff',1,'center');break;
@@ -698,7 +701,7 @@ function drawHelp(){const r=menuInput();drawBgMenu();const pg=GAME.help||0;const
   bigTxt('KOMBODRAG',W/2,3,2,'#fff','#ffd34a');
   for(let k=0;k<2;k++){const c=CHARS[(pg-1)*2+k];if(!c)break;const y0=20+k*96;box(6,y0,W-12,92,'#140a24ee',c.col);txt(c.name+' – SPECIAL: '+c.sp.name+'  ↓+SPEC: '+c.sp2.name,10,y0+3,c.col);
     CB_ORDER.forEach((key,i)=>{const cb=COMBOS[c.id][key];const y=y0+14+i*12;const star=key==='dhpk'||cb.star;txt(KLABEL[key][0]+' / '+KLABEL[key][1],10,y,'#ffd34a');const nm=(star?'★':'')+cb.n;txt(nm,92,y,star?'#ff9ac8':'#fff');const room=Math.floor((W-10-(92+textW(nm)+10))/6);let d=CB_DESC[cb.n]||'';if(d.length>room)d=d.slice(0,Math.max(0,room-1))+'.';if(room>4)txt(d,W-10,y,'#aaa',1,'right');});
-    txt('SUPER: '+c.su.name+'   AVSLUTA: '+c.fin.name,10,y0+84,'#9ad');}}
+    txt('↓↘→: '+(c.ex||'EXTRA '+c.sp.name)+'  SUPER: '+c.su.name+'  AVSLUTA: '+c.fin.name,10,y0+84,'#9ad');}}
 function drawSelect(){const r=menuInput();drawBgMenu();bigTxt('VÄLJ FIGHTER',W/2,4,3,'#fff','#ffd34a');
   const NC=CHARS.length,cols=4,cw=46,chh=50,gx=W/2-(cols*(cw+4)-4)/2,gy=34;
   const players=GAME.mode===1?1:2;
@@ -719,7 +722,7 @@ function drawSelect(){const r=menuInput();drawBgMenu();bigTxt('VÄLJ FIGHTER',W/
   // infobox för den som väljer
   const ip=GAME.mode===1?(GAME.selDone[0]?1:0):((frame>>7)%2);const c=CHARS[GAME.sel[ip]];
   box(8,166,W-16,50,'#140a24ee',c.col);txt(c.name+(c.id==='bobban'?(GAME.costume[ip]?' (BRÖLLOP)':' (FLEECE)'):''),14,170,c.col);
-  txt('SPECIAL: '+c.sp.name+'   ↓+SPECIAL: '+c.sp2.name,14,180,'#fff');txt('SUPER: '+c.su.name+'   AVSLUTA: '+c.fin.name,14,190,'#fff');wrapTxt(c.info,14,201,60,'#aaa');
+  txt('SPECIAL: '+c.sp.name+'  ↓↘→+SLAG: '+(c.ex||'EXTRA')+'  ↓+SPEC: '+c.sp2.name,14,180,'#fff');txt('SUPER: '+c.su.name+'   AVSLUTA: '+c.fin.name,14,190,'#fff');wrapTxt(c.info,14,201,60,'#aaa');
   if(c.id==='bobban')txt('R/O = BYT KLÄDER',W-14,170,'#ffd34a',1,'right');
   if(GAME.mode===1&&!GAME.selDone[1])txt(GAME.selDone[0]?'VÄLJ MOTSTÅNDARE ÅT DATORN':'VÄLJ DIN FIGHTER',W/2,144,'#ffd34a',1,'center');
   if(GAME.mode===2&&!(GAME.selDone[0]&&GAME.selDone[1]))txt('1P: A/D/W/S + F    2P: PILAR + K',W/2,144,'#ffd34a',1,'center');
@@ -787,12 +790,13 @@ function bootTest(){const t=Q.get('test');if(!t)return;if(t==='select'){GAME.mod
 window.__game={GAME,get M(){return M},get F(){return F}};
 updateTouch();requestAnimationFrame(loop);
 
+function i2c(t){return t%4<2?'#f4c21a':'#fff';}
 // ===== Tvåknappskombos, kedjor, retas, yrsel, fallande saker =====
 const CB_PAIRS={lpk:['lp','lk'],hpk:['hp','lk'],lph:['lp','hp'],spb:['sp','bl']};
 const CB_ORDER=['lpk','hpk','lph','spb','dlpk'];
 const KLABEL={lpk:['F+H','K+Ö','SLAG+SPARK'],hpk:['G+H','L+Ö','TUNGT+SPARK'],lph:['F+G','K+L','SLAG+TUNGT'],spb:['R+Q','O+I','SPECIAL+BLOCK'],dlpk:['S+F+H','↓+K+Ö','↓+SLAG+SPARK']};
 const COMBOS={
- bobban:{lpk:{n:'SVETSKLAPP',t:'burst',col:'#7cff4a',dmg:9,pop:'SVETS!'},hpk:{n:'SKÄGGSNURR',t:'rise',dmg:4,col:'#c9a35a'},lph:{n:'LANSSTÖT',t:'dash',pose:'knight',dmg:11},
+ bobban:{lpk:{n:'SVETSKLAPP',t:'burst',col:'#7cff4a',dmg:9,pop:'SVETS!'},hpk:{n:'SKÄGGSNURR',t:'rise',dmg:4,col:'#c9a35a'},lph:{n:'KOFOTSRUSNING',t:'dash',pose:'hp',dmg:11},
    spb:{n:'SVETSMÄSTAREN',t:'weld',dmg:3,star:1},dlpk:{n:'VERKTYGSLÅDA',t:'proj',kind:'toolbox',arc:1,dmg:11}},
  balto:{lpk:{n:'SVANSPISK',t:'burst',col:'#d39a55',dmg:8,pop:'SVISCH!'},hpk:{n:'BENKAST',t:'proj',kind:'bone',arc:1,dmg:10},lph:{n:'ZOOMIES!',t:'zoom',dmg:4},
    spb:{n:'TREDUBBELVOFF',t:'proj',kind:'voff',count:3,dmg:5},dlpk:{n:'GRÄVA GRÄVA',t:'ground',kind:'dirt',dmg:9}},
@@ -805,7 +809,7 @@ const COMBOS={
  grok:{lpk:{n:'STJÄRNSMÄLL',t:'burst',col:'#b48cff',dmg:9,pop:'POFF!'},hpk:{n:'METEORREGN',t:'rain',kind:'meteor',dmg:3,count:6},lph:{n:'ROAST-BUBBLA',t:'proj',kind:'bubble',dmg:10},
    spb:{n:'NOLLGRAVITATION',t:'lift',dmg:7},dlpk:{n:'KVASARVÅG',t:'ground',kind:'quasar',dmg:9}},
 };
-const CB_DESC={SVETSKLAPP:'GNISTREGN RUNT HÄNDERNA',SKÄGGSNURR:'SNURRAR UPPÅT MED SKÄGGET',LANSSTÖT:'RIDDARRUSNING MED LANS',SVETSMÄSTAREN:'BYTER TILL SVETSKLÄDER + SVETSAR PÅ LÅNGT HÅLL!',VERKTYGSLÅDA:'KASTAR EN VERKTYGSLÅDA',
+const CB_DESC={SVETSKLAPP:'GNISTREGN RUNT HÄNDERNA',SKÄGGSNURR:'SNURRAR UPPÅT MED SKÄGGET',KOFOTSRUSNING:'RUSAR FRAM MED KOFOTEN FÖRST',SVETSMÄSTAREN:'BYTER TILL SVETSKLÄDER + SVETSAR PÅ LÅNGT HÅLL!',VERKTYGSLÅDA:'KASTAR EN VERKTYGSLÅDA',
  SVANSPISK:'VIFTAR SÖNDER MOTSTÅNDAREN',BENKAST:'KASTAR SITT BEN','ZOOMIES!':'SPRINGER FRAM OCH TILLBAKA',TREDUBBELVOFF:'TRE SKALL PÅ RAD','GRÄVA GRÄVA':'JORDKLUMPAR LÄNGS MARKEN',
  'SELFIE-BLIXT':'BLIXTAR – MOTSTÅNDAREN BLIR YR',MOBILREGN:'MOBILER REGNAR NER','RING RING!':'GAMMAL TELEFONLUR SOM KOMMER TILLBAKA',OVERALLSNURR:'SNURRAR UPP I OVERALLEN',LADDSLADDSPISK:'LADDSLADD LÄNGS MARKEN',
  PÅSSNURR:'PÅSARNA SNURRAR RUNT',KUNDVAGNSRACE:'RUSAR MED KUNDVAGN',SAFTFONTÄN:'SAFTREGN','REAFYND!':'TRE PÅSAR PÅ EN GÅNG',SOLGLASÖGONGLANS:'BLÄNDANDE GLANS LÄNGS MARKEN',
@@ -833,6 +837,7 @@ function updateCombo(f,o){const a=f.act,c=a.c,t=a.t;let r;const hit=(d,opt={})=>
   if(['song','hops','headroll','heli','update','portal'].includes(c.t))len=updateSig(f,o,a,c,t,hit,near);
   if(['iceblock','hug','spikes'].includes(c.t))len=updateGulle(f,o,a,c,t,hit,near);
   switch(c.t){
+   case 'drill':len=30;f.pose='lp';f.ext=1;f.vx=t<24?f.face*3.6:0;if(t%2===0)part({x:f.x+f.face*34,y:f.y-f.ch.H*0.7,vx:f.face*rnd(0,2),vy:rnd(-2,1),col:i2c(t),life:10});if(t%6===3&&a.hits<3&&near(46,44)){a.hits++;hit(c.dmg+1,{hs:16,kb:1.2,big:a.hits===3?1:0,kd:a.hits===3});floatText(o.x,o.y-o.ch.H-4,'SKRUV!','#f4c21a');}break;
    case 'burst':len=26;f.pose='hp';f.ext=1;if(t%3===0)for(let i=0;i<5;i++){const an=Math.random()*7;part({x:f.x+f.face*14,y:f.y-f.ch.H*0.6,vx:Math.cos(an)*3,vy:Math.sin(an)*3,col:i%2?c.col:'#fff',life:16,s:2});}
      if((t===8||t===16)&&near(52)){hit(c.dmg/2,{hs:16,kb:2,big:t===16?1:0});floatText(o.x,o.y-o.ch.H-6,c.pop,c.col);}break;
    case 'rise':len=44;f.pose='sp2';if(t%3===0)part({x:f.x,y:f.y,vx:rnd(-1,1),vy:1,col:c.col,life:14,s:3});if(t%7===3&&a.hits<3&&near(42,52)){a.hits++;hit(c.dmg,{hs:16,kb:1.5,big:a.hits===3?1:0,kd:a.hits===3});}if(f.onGround&&t>6)len=t;break;
@@ -934,7 +939,7 @@ function drawNote(p){const x=p.x,y=p.y+Math.sin(frame*0.3+p.x)*3;RO(x-4,y,6,5,'#
 
 // ===== Gullebullen / Isdrottningen (egen pixelfigur, ritad i kod) =====
 CHARS.splice(4,0,{id:'gulle',name:'GULLEBULLEN',short:'GULLE',proc:'gulle',H:78,Wd:22,speed:1.5,jump:-7,col:'#9adfff',
-  sp:{name:'ISTAPP',proj:'ice'},sp2:{name:'ISPIRUETT',type:'rise'},su:{name:'ISKALL BLICK',type:'freeze'},fin:{name:'SNÖGUBBE',type:'snowman'},
+  ex:'SNÖBOLL',sp:{name:'ISTAPP',proj:'ice'},sp2:{name:'ISPIRUETT',type:'rise'},su:{name:'ISKALL BLICK',type:'freeze'},fin:{name:'SNÖGUBBE',type:'snowman'},
   quote:'ISDROTTNINGEN VINNER – IGEN!',info:'ISDROTTNINGEN: RUFSIGT BLONT HÅR, SVART HOODIE MED TRE RÄNDER, JEANSSHORTS.'});
 COMBOS.gulle={lpk:{n:'FROSTFINGRAR',t:'burst',col:'#9adfff',dmg:8,pop:'BRRR!'},hpk:{n:'ISBANAN',t:'ground',kind:'iceslide',dmg:7,kd:1},lph:{n:'ISKUBEN',t:'iceblock',dmg:8},
   spb:{n:'GULLEBULLEN-KRAM',t:'hug',dmg:10},dlpk:{n:'SNÖSTORM',t:'rain',kind:'snowflake',dmg:2,count:10},dhpk:{n:'ISKRONAN',t:'spikes',dmg:6}};
@@ -998,6 +1003,42 @@ function drawGulleProj(p){const x=p.x,y=p.y;switch(p.kind){
   case 'snowball':ctx.fillStyle='#000';ctx.beginPath();ctx.arc(x,y,10,0,7);ctx.fill();ctx.fillStyle='#f4fbff';ctx.beginPath();ctx.arc(x,y,9,0,7);ctx.fill();ctx.fillStyle='#cfe6f2';ctx.beginPath();ctx.arc(x+3,y+3,4,0,7);ctx.fill();if(frame%2)part({x:x-p.vx*2,y:y+rnd(-5,5),col:'#fff',life:12,s:2});return true;
   case 'snowflake':txt('*',x,y-3,'#fff',1,'center','#6ab');return true;
   case 'iceslide':ctx.fillStyle='rgba(190,244,255,0.8)';ctx.fillRect(x-14,GROUND-3,28,3);R(x-10,GROUND-3,6,1,'#fff');txt('HALT!',x,y-14,'#bff4ff',1,'center');return true;}return false;}
+
+// ===== Bobbans verktyg: stor kofot (röd/svart) + stor skruvmejsel (gul/svart) =====
+function drawCrowbar(x,y,face,ang,len=28){const c=Math.cos(ang)*face,s=Math.sin(ang),ex=x+c*len,ey=y+s*len;
+  ctx.lineCap='butt';ctx.strokeStyle='#000';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x-c*4,y-s*4);ctx.lineTo(ex,ey);ctx.stroke();
+  const n=6;for(let i=0;i<n;i++){ctx.strokeStyle=i%2?'#111':'#d8262a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x-c*4+(ex-x+c*4)*i/n,y-s*4+(ey-y+s*4)*i/n);ctx.lineTo(x-c*4+(ex-x+c*4)*(i+1)/n,y-s*4+(ey-y+s*4)*(i+1)/n);ctx.stroke();}
+  // böjd klo i spetsen
+  const px=-s*face,py=Math.cos(ang);// vinkelrät
+  ctx.strokeStyle='#000';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(ex,ey);ctx.quadraticCurveTo(ex+c*6,ey+s*6,ex+c*4+px*7,ey+s*4+py*7);ctx.stroke();
+  ctx.strokeStyle='#d8262a';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(ex,ey);ctx.quadraticCurveTo(ex+c*6,ey+s*6,ex+c*4+px*7,ey+s*4+py*7);ctx.stroke();
+  ctx.fillStyle='#ffffff88';ctx.fillRect(Math.round(x+c*len*0.4),Math.round(y+s*len*0.4)-1,2,1);}
+function drawScrewdriver(x,y,face,ang,len=24,spin=0){const c=Math.cos(ang)*face,s=Math.sin(ang);const hx=x+c*9,hy=y+s*9,ex=x+c*len,ey=y+s*len;
+  ctx.lineCap='butt';ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(ex,ey);ctx.stroke();ctx.strokeStyle=spin&&(frame>>1)%2?'#fff':'#b8c0cc';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(hx,hy);ctx.lineTo(ex,ey);ctx.stroke();
+  ctx.strokeStyle='#000';ctx.lineWidth=7;ctx.beginPath();ctx.moveTo(x-c*3,y-s*3);ctx.lineTo(hx,hy);ctx.stroke();
+  for(let i=0;i<4;i++){ctx.strokeStyle=(i+(spin?(frame>>1):0))%2?'#111':'#f4c21a';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(x-c*3+(hx-x+c*3)*i/4,y-s*3+(hy-y+s*3)*i/4);ctx.lineTo(x-c*3+(hx-x+c*3)*(i+1)/4,y-s*3+(hy-y+s*3)*(i+1)/4);ctx.stroke();}
+  if(spin){ctx.strokeStyle='#fff';ctx.globalAlpha=0.6;ctx.lineWidth=1;ctx.beginPath();ctx.arc(ex,ey,4+(frame%3),0,7);ctx.stroke();ctx.globalAlpha=1;}}
+// var sitter händerna för olika poser (feet x,y)
+function drawBobbanTools(f,x,y,face,name,armEnd,e,layer){if(f.weld>0.5)return;const p=f.pose;if(['down','ko','knight','roll'].includes(p))return;
+  const h=sprH(name)||70;const thrown=PR.some(q=>q.owner===f&&q.kind==='crowbar');const sw=Math.sin((f.walkT||0)*0.25)*0.25;
+  let fH=[x+face*6,y-h*0.42],bH=[x+face*1,y-h*0.5],fA=1.25+(p==='walk'?sw:0),bA=-0.45-(p==='walk'?sw*0.6:0);
+  if(p==='jump'||p==='jlk'||p==='heli'){fH=[x+face*8,y-h*0.6];fA=-0.6;bH=[x-face*2,y-h*0.62];bA=-1.2;}
+  if(p==='crouch'||p==='cblock'||p==='clk'){fH=[x+face*8,y-h*0.38];fA=0.4;bH=[x+face*2,y-h*0.5];bA=-0.6;}
+  if(p==='win'||p==='taunt'){fH=[x+face*8,y-h*0.75];fA=-1.3+Math.sin(frame*0.2)*0.3;bH=[x-face*6,y-h*0.72];bA=-1.9;}
+  if(p==='block'){fH=[x+face*9,y-h*0.6];fA=-1.5;}
+  if(p==='sp2'){fH=[x+face*10,y-h*0.55];fA=frame*0.5;bH=[x-face*8,y-h*0.55];bA=frame*0.5+3;}
+  if(layer==='back'){return;}
+  const lpStab=armEnd&&(p==='lp'||p==='clp');if(!lpStab)drawScrewdriver(bH[0],bH[1],face,bA,22);
+  // främre hand
+  if(armEnd&&(p==='lp'||p==='clp')){drawScrewdriver(armEnd[0],armEnd[1],face,0,26,e>0.9);drawCrowbar(fH[0]-face*2,fH[1],face,1.3,26);return;}// skruvmejsel-stöt (kofoten hänger kvar)
+  if(armEnd&&(p==='hp'||p==='jlp')){const a=p==='jlp'?0.2+e*0.9:-1.4+e*1.5;drawCrowbar(armEnd[0],armEnd[1],face,a,30);if(e>0.8)swoosh(armEnd[0],armEnd[1],face,24,'#ffb0b0');return;}// kofotssving
+  if(p==='sp'&&thrown)return;
+  drawCrowbar(fH[0],fH[1],face,fA,28);}
+// specialdrag: kofot-bumerang och skruv-borr
+SFX.clank=function(){tone(1250,0.06,'square',0.1);tone(2350,0.28,'triangle',0.06,-120);tone(1750,0.22,'triangle',0.04,80,0.02);noise(0.04,0.15,9000);};
+function drawToolProj(p){const x=p.x,y=p.y;if(p.kind==='crowbar'){ctx.save();ctx.translate(x,y);ctx.rotate(p.spin*1.4);drawCrowbar(-12,0,1,0,24);ctx.restore();if(frame%16<8)txt('KOFOT!',x,y-18,'#ff6a6a',1,'center');return true;}
+  if(p.kind==='tool'){ctx.save();ctx.translate(x,y);ctx.rotate(p.spin);if(p.t===0)drawScrewdriver(-10,0,1,0,20);else if(p.t===1){RO(-2,-8,4,14,'#8a5a2c');RO(-6,-10,12,5,'#9aa4b0');}else{seg(-8,0,8,0,3,'#9aa4b0');ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.beginPath();ctx.arc(9,0,4,0.8,5.5);ctx.stroke();ctx.strokeStyle='#9aa4b0';ctx.lineWidth=1.5;ctx.stroke();}ctx.restore();return true;}return false;}
+const DRILL={n:'SKRUVA!',t:'drill',dmg:4};
 
 </script>
 </body>
