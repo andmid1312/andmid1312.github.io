@@ -751,7 +751,7 @@ function drawStageSel(){const r=menuInput();drawBgMenu();bigTxt('VÄLJ BANA',W/2
   txt('←/→ VÄLJ – F/ENTER = KÖR!',W/2,212,(frame>>4)%2?'#ffd34a':'#aaa',1,'center');}
 function drawResult(){const r=menuInput();drawBgMenu();const c=M.champ;bigTxt(c.name+' VINNER!',W/2,10,3,'#fff36a','#ff7a1f');
   const fk={ch:c.ch,pose:'win',face:1,x:90,y:170,flash:0,meter:0,walkT:0,costume:c.costume,alt:c.alt,vy:0,ext:0};drawFighterBody(fk);
-  box(150,50,224,60,'#140a24ee',c.ch.col);txt(c.ch.name+':',158,56,c.ch.col);if(!M.wq){const l=WINQ[c.ch.id];M.wq=l[Math.random()*l.length|0];}wrapTxt('"'+M.wq+'"',158,70,34,'#fff');
+  box(150,50,224,60,'#140a24ee',c.ch.col);txt(c.ch.name+':',158,56,c.ch.col);if(!M.wq){const l=WINQ[c.ch.id];M.wq=l[Math.random()*l.length|0];}{const [wm,wt]=bubbleSplit(M.wq);wrapTxt('"'+wm+'"',158,70,34,'#fff');if(wt)wrapTxt('('+wt+')',158,92,34,'#9ab0e0');}
   const items=['REVANSCH!','BYT FIGHTER','TILL MENYN'];if(r.up){GAME.menu=(GAME.menu+2)%3;SFX.sel();}if(r.down){GAME.menu=(GAME.menu+1)%3;SFX.sel();}
   const act=i=>{SFX.ok();if(i===0)startMatch();else if(i===1)toSelect();else go('title');};if(r.ok){act(GAME.menu);return;}
   items.forEach((s,i)=>{const y=126+i*16;const on=i===GAME.menu;box(180,y,164,12,on?'#3a1a5a':'#140a24',on?'#ffd34a':'#555');txt(s,262,y+3,on?'#ffd34a':'#fff',1,'center');onClickRect(180,y,164,12,()=>act(i));});}
@@ -842,7 +842,7 @@ function detectCombo(f,pr,pad){let any=false;for(const a of ['lp','hp','lk','sp'
   for(const k of ['lpk','hpk','lph','spb']){const [a,b]=CB_PAIRS[k];if((pr[a]||pr[b])&&frame-f.pf[a]<=5&&frame-f.pf[b]<=5){f.pf[a]=f.pf[b]=-99;return (k==='lpk'&&pad.down)?'dlpk':(k==='hpk'&&pad.down)?'dhpk':k;}}return null;}
 function canCombo(f){if(f.state==='stand'||f.state==='air')return true;if(f.state==='act'&&f.act){const a=f.act;if(a.k==='cb'||a.k==='su')return false;if(a.t<=7)return true;if(a.hit&&a.m)return true;}return false;}
 function startCombo(f,key){const c=key==='__flip'?{n:'KULLERBYTTA',t:'flip',dmg:5,hits:2}:COMBOS[f.ch.id][key];f.act={k:'cb',key,c,t:0,hits:0,hit:false};f.state='act';f.vx=0;
-  part({x:f.x,y:f.y-f.ch.H-18,vy:-0.4,type:'big',t:c.n,col:'#ffef6a',life:60});SFX.combo(c.t);say(c.n.replace('!','').toLowerCase());
+  part({x:f.x,y:f.y-f.ch.H-18,vy:-0.4,type:'big',t:c.n,col:'#ffef6a',life:60});SFX.combo(c.t);say(c.n.replace('!','').toLowerCase());if(f.ch.id==='ferdi'&&FERDI_SHOUT[key]){const [al,sv]=bubbleSplit(FERDI_SHOUT[key]);floatText(f.x,f.y-f.ch.H+16,al,'#fff');part({x:f.x,y:f.y-f.ch.H+25,vy:-0.6,type:'text',t:'('+sv+')',col:'#9ab0e0',life:45});}
   if(c.t==='rise'){f.vy=-5.8;f.onGround=false;f.vx=f.face*1.4;}
   if(c.t==='weld')for(let i=0;i<16;i++)part({x:f.x+rnd(-14,14),y:f.y-rnd(0,f.ch.H),vx:rnd(-1,1),vy:rnd(-1.5,0),col:'#bbb',life:25,s:3});}
 function cbProj(f,kind,o={}){const p=Object.assign({owner:f,kind,x:f.x+f.face*22,y:f.y-f.ch.H*0.6,vx:f.face*3.4,vy:0,g:0,w:16,h:14,dmg:8,life:150,dead:false,spin:0},o);PR.push(p);return p;}
@@ -919,8 +919,8 @@ function drawItems(){for(const it of ITEMS){const x=it.x,y=it.y;if(it.life<120&&
   case 'stjarna':txt('★',x,y-9-Math.abs(Math.sin(frame*0.1))*3,frame%10<5?'#ffd34a':'#fff',1,'center');break;
   case 'anka':drawDuck(x,y,1);break;}}}
 // retas
-function startTaunt(f){const l=TAUNTS[f.ch.id];const s=l[Math.random()*l.length|0];f.act={k:'ta',t:0,s};f.state='act';f.meter=Math.min(100,f.meter+12);say(s.toLowerCase());SFX.taunt();}
-function drawTaunt(f){const a=f.act;if(!a||a.k!=='ta')return;const w=Math.min(150,textW(a.s)+8);const bx=clamp(f.x-w/2,M.cam+2,M.cam+W-w-2);box(bx,f.y-f.ch.H-30,w,12,'#fff','#000');txt(a.s,bx+w/2,f.y-f.ch.H-27,'#000',1,'center',null);}
+function startTaunt(f){const l=TAUNTS[f.ch.id];const s=l[Math.random()*l.length|0];f.act={k:'ta',t:0,s};f.state='act';f.meter=Math.min(100,f.meter+12);say((bubbleSplit(s)[1]||s).toLowerCase());SFX.taunt();}
+function drawTaunt(f){const a=f.act;if(!a||a.k!=='ta')return;const [m,t]=bubbleSplit(a.s);const w=Math.min(170,Math.max(textW(m),t?textW(t)*0.75:0)+8);const bx=clamp(f.x-w/2,M.cam+2,M.cam+W-w-2),by=f.y-f.ch.H-(t?38:30);box(bx,by,w,t?20:12,'#fff','#000');txt(m,bx+w/2,by+3,'#000',1,'center',null);if(t){ctx.save();ctx.translate(bx+w/2,by+12);ctx.scale(0.75,0.75);txt('('+t+')',0,0,'#4a4a8a',1,'center',null);ctx.restore();}}
 // ===== Signaturdrag (↓+TUNGT+SPARK) =====
 KLABEL.dhpk=['S+G+H','↓+L+Ö','↓+TUNGT+SPARK'];CB_ORDER.push('dhpk');
 Object.assign(COMBOS.bobban,{dhpk:{n:'SVETT-SVETS-SKÄGG-SÅNGEN',t:'song',dmg:5}});
@@ -1084,7 +1084,7 @@ CHARS.push(
  {id:'ferdi',name:'FERDI',tag:'FERDI',proc:'kid',H:80,Wd:24,speed:1.45,jump:-6.9,col:'#ffcf3a',ex:'SKAKAD BURK',
   kid:{hair:'#f6eaa8',hairD:'#d8c46a',top:'#1c2a5a',topD:'#111b3d',pants:'#40608f',pantsD:'#2c4366',shoe:'#f2f2f2',logo:'FK',adult:1,beard:'#c8bc94',glasses:1,full:1},
   sp:{name:'BURKKAST',proj:'can'},sp2:{name:'SOCKERRUSH',type:'dash'},su:{name:'JÄTTEBURKEN',type:'drink'},fin:{name:'BURKPYRAMIDEN',type:'cans'},
-  quote:'RED BJURN GER VINGAR... ELLER I ALLA FALL VINST!',info:'BLEKT BLONT HÅR, SKÄGGSTUBB OCH GLASÖGON. DRICKER JÄTTEBURKAR RED BJURN OCH TÄNKER KONSTIGA TANKAR!'}
+  quote:'RED BJURN GER VINGAR... ELLER I ALLA FALL VINST!',info:'ASKBLONT HÅR, SKÄGGSTUBB, MÖRKA GLASÖGON. DRICKER RED BJURN OCH TÄNKER PÅ ALBANSKA!'}
 );
 CH('annie').fem=1;CH('gulle').fem=1;CH('grokbot').tag='G-BOT';CH('skallen').tag='SKALLE';CH('balto').tag='BALTO';CH('annie').tag='ANNIE';CH('gulle').tag='GULLE';
 COMBOS.love={lpk:{n:'DABB!',t:'burst',col:'#4ad66a',dmg:8,pop:'DABB!'},hpk:{n:'KUDDKRIG',t:'proj',kind:'pillow',arc:1,dmg:10},lph:{n:'KICKFLIP',t:'rise',dmg:4,col:'#e23b3b'},
@@ -1106,7 +1106,7 @@ const FINSEQ={bobban:['D','F','lp'],balto:['B','F','lk'],skallen:['D','D','hp'],
 const SEQL={D:'↓',U:'↑',F:'→',B:'←',lp:'SLAG',hp:'TUNGT',lk:'SPARK',sp:'SPECIAL'};
 
 // ---- ritning: barn/ung man ----
-function drawKid(f,x,y,face,sc=1){const k=(f.costume&&f.ch.outfits)?Object.assign({},f.ch.kid,f.ch.outfits[f.costume-1]):f.ch.kid,p=procPose(f);const H=f.ch.H,u=H/78;ctx.save();ctx.translate(Math.round(x+(f.buff>0&&f.ch.id==='ferdi'?rnd(-1,1):0)),Math.round(y));ctx.scale(face*sc,sc);
+function drawKid(f,x,y,face,sc=1){const k=(f.costume&&f.ch.outfits)?Object.assign({},f.ch.kid,f.ch.outfits[f.costume-1]):f.ch.kid;if(f.ch.id==='ferdi')return drawFerdi(f,x,y,face,sc,k);const p=procPose(f);const H=f.ch.H,u=H/78;ctx.save();ctx.translate(Math.round(x+(f.buff>0&&f.ch.id==='ferdi'?rnd(-1,1):0)),Math.round(y));ctx.scale(face*sc,sc);
   if(f.pose==='flip'){ctx.translate(0,-H*0.4);ctx.rotate((f.flipT||0)*0.45);ctx.translate(0,H*0.4);}
   else if(p.rot){ctx.translate(0,-4);ctx.rotate(p.rot);}
   const fl=f.flash>0,W_=c=>fl?'#fff':c;const S=W_('#f2c6a8'),S2=W_('#d9a585'),T=W_(f.alt?'#7a3fd6':k.top),T2=W_(f.alt?'#4a2490':k.topD),P=W_(k.pants),P2=W_(k.pantsD),SH=W_(k.shoe);
@@ -1208,12 +1208,12 @@ function rainbowShades(L,hy,W_){R(-3+L,hy+8,11,4,'#111');for(let i=0;i<4;i++){R(
 function drawKidExtras(f,k,L,hy,shY,hipY,legLen,p,W_){
   if(k.stripes){for(const lx of [p.legB[0],p.legF[1]<0?null:p.legF[0]]){if(lx===null)continue;R(Math.round(lx),hipY+2,1,legLen-6,W_('#f4f4f4'));R(Math.round(lx)+1,hipY+2,1,legLen-6,W_('#55555c'));R(Math.round(lx)+2,hipY+2,1,legLen-6,W_('#e0e0e0'));}}
   if(k.hood){R(-6+L,shY-2,12,3,W_(k.topD));R(-2+L,shY+1,1,5,W_('#fff'));R(2+L,shY+1,1,5,W_('#fff'));}
-  if(k.logo==='LOVE'){const G=W_(k.logoCol||'#f4f4f4'),gx=L-10,gy=shY+8;
+  if(k.logo==='LOVE'){ctx.save();if(ctx.getTransform().a<0){ctx.translate(2*(L-2.5),0);ctx.scale(-1,1);}const G=W_(k.logoCol||'#f4f4f4'),gx=L-10,gy=shY+8;
     R(gx,gy,1,5,G);R(gx,gy+4,3,1,G);// L
     R(gx+4,gy,3,1,G);R(gx+4,gy+4,3,1,G);R(gx+4,gy,1,5,G);R(gx+6,gy,1,5,G);// O
     R(gx+8,gy,1,3,G);R(gx+10,gy,1,3,G);R(gx+9,gy+3,1,2,G);// V
     R(gx+12,gy,1,5,G);R(gx+12,gy,3,1,G);R(gx+12,gy+2,2,1,G);R(gx+12,gy+4,3,1,G);// E
-    if(!k.hood)R(gx-1,gy+6,17,1,W_('#d8c8b8'));}
+    if(!k.hood)R(gx-1,gy+6,17,1,W_('#d8c8b8'));ctx.restore();}
   if(k.logo==='spinner'){const cx=L-2,cy=shY+11,a=frame*0.3;for(let i=0;i<3;i++){const an=a+i*2.094;const px=Math.round(cx+Math.cos(an)*3.5),py=Math.round(cy+Math.sin(an)*3.5);RO(px-1,py-1,3,3,W_(['#3aa0ff','#ff3a3a','#ffd34a'][i]));}R(cx-1,cy-1,2,2,W_('#ddd'));}
   if(k.cap&&k.teal){R(-10+L,hy+3,3,3,'#000');R(-9+L,hy+3,2,2,W_('#2fd6c8'));}
   if(k.teal&&!k.cap&&!(k.winCap&&f.pose==='win'&&!f.act)){const B=W_(k.hair),BD=W_(k.hairD),T1=W_('#2fd6c8'),T2=W_('#17a3a0'),T3=W_('#8af5ea');
@@ -1255,6 +1255,72 @@ function drawThought(f){const L=f.ch.thoughts;if(!L||GAME.screen!=='fight'||f.st
   ctx.fillStyle='#fff';for(const [cx,cy,r] of blobs){ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();}ctx.fillRect(bx,by+1,w,18);
   for(const [cx,cy,r] of [[hx+2,hy-4,2.5],[hx+6,hy-10,3.5]]){ctx.beginPath();ctx.arc(cx,cy,r,0,7);ctx.fill();}
   txt(s,bx+w/2,by+6,(frame>>3)%2?'#222':'#7a1fa8',1,'center',null);}
+
+// ===== Ferdi – uppgraderad pixelfigur + albanska tankar/pratbubblor =====
+(function(){const d={'Ë':'01010 00000 11111 10000 11110 10000 11111','Ç':'01111 10000 10000 10000 01111 00100 01100'};for(const k in d)G[k]=d[k].split(' ').map(r=>parseInt(r,2));})();
+const FERDI_HAIR=['#a88c55','#7d6638','#cbb27a','#e0cc98'];// smutsblont/askblont
+function drawFerdi(f,x,y,face,sc=1,k){const p=procPose(f);const fl=f.flash>0,W_=c=>fl?'#fff':c;
+  ctx.save();ctx.translate(Math.round(x+(f.buff>0?rnd(-1,1):0)),Math.round(y));ctx.scale(face*sc,sc);
+  if(f.pose==='flip'){ctx.translate(0,-32);ctx.rotate((f.flipT||0)*0.45);ctx.translate(0,32);}else if(p.rot){ctx.translate(0,-4);ctx.rotate(p.rot);}
+  const SK=W_('#f0c4a2'),SK2=W_('#d39d7c'),SK3=W_('#b97f62'),T=W_(f.alt?'#5a2f9a':k.top),T2=W_(f.alt?'#3c1f6a':k.topD),T3=W_(f.alt?'#7a52c0':'#3a4c86'),
+    J=W_(k.pants),J2=W_(k.pantsD),J3=W_('#6f8fbd'),SH=W_('#f4f4f4'),SH2=W_('#c8ccd4'),SO=W_('#3a3a44'),[HA,HA2,HA3,HA4]=FERDI_HAIR.map(W_),BE=W_('#a99a74'),BE2=W_('#857653');
+  const idle=['idle','stand','walk','block'].includes(f.pose)||!f.pose;const br=idle?Math.round(Math.sin(frame*0.07)*1):0;
+  const cr=p.crouch,tk=p.tuck,L=p.lean;const hipY=-38+cr+tk*0.5,legLen=38-cr-tk;const shY=-61+cr+tk*0.3+br,hy=-80+cr+tk*0.3+br;
+  const shoe=(sx,sy,back)=>{RO(sx-3,sy-5,10,5,back?SH2:SH);R(sx-3,sy-1,10,1,SO);R(sx+1,sy-4,4,1,W_('#1c2a5a'));R(sx-2,sy-5,2,1,W_('#ffffff'));};
+  // bakre ben
+  seg(p.legB[0],hipY,p.legB[0]-0.5,hipY+legLen*0.5,7,J2);seg(p.legB[0]-0.5,hipY+legLen*0.5,p.legB[0],hipY+legLen-4,6,J2);shoe(p.legB[0],0,1);
+  // bakre arm
+  seg(-5+L,shY+3,-5+L+p.armB[0]*0.45,shY+3+p.armB[1]*0.45,6,T2);seg(-5+L+p.armB[0]*0.45,shY+3+p.armB[1]*0.45,-5+L+p.armB[0],shY+p.armB[1]+3,4,SK2);RO(-7+L+p.armB[0],shY+p.armB[1]+1,5,5,SK2);
+  // främre ben (spark = utsträckt)
+  if(p.legF[1]<0){const ex=p.legF[0]+2,ey=hipY+legLen*0.35+p.legF[1]*0.2;seg(1,hipY,ex,ey,7,J);R(Math.min(1,ex)+2,Math.min(hipY,ey)+1,3,1,J3);ctx.save();ctx.translate(ex,ey);ctx.rotate(-1.35);shoe(-2,4,0);ctx.restore();
+    if(f.ext>0.8&&f.pose!=='drink'){ctx.strokeStyle='#ffffff99';ctx.lineWidth=1;for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(ex-14,ey-4+i*4);ctx.lineTo(ex-5,ey-4+i*4);ctx.stroke();}}}
+  else{const lx=p.legF[0];seg(lx,hipY,lx+0.5,hipY+legLen*0.5,7,J);seg(lx+0.5,hipY+legLen*0.5,lx,hipY+legLen-4,6,J);R(lx+1,hipY+3,1,legLen*0.4,J3);R(lx-2,hipY+legLen*0.5,4,1,J2);R(lx-3,hipY+legLen-7,7,1,J2);shoe(lx,0,0);}
+  // bälte + jeansöverdel
+  RO(-10+L,hipY-5,20,7,J);R(-10+L,hipY-5,20,2,W_('#4a3220'));R(-1+L,hipY-5,3,2,W_('#c0b080'));R(3+L,hipY-2,1,4,J2);
+  // t-shirt med skuggning
+  RO(-11+L,shY,22,hipY-shY-4,T);R(4+L,shY+1,7,hipY-shY-6,T2);R(-10+L,shY+1,4,hipY-shY-6,T3);R(-11+L,hipY-9,22,1,T2);R(-4+L,hipY-14,6,1,T2);
+  R(-5+L,shY-1,10,3,'#000');R(-4+L,shY-1,8,2,SK2);R(-4+L,shY+1,8,1,T2);// krage
+  if(k.logo==='FK'){ctx.save();if(ctx.getTransform().a<0){ctx.translate(2*L,0);ctx.scale(-1,1);}const lx=L-7,ly=shY+6,Wc=W_('#f4f4f4');R(lx,ly,2,9,Wc);R(lx,ly,6,2,Wc);R(lx,ly+4,5,2,Wc);R(lx+8,ly,2,9,Wc);R(lx+10,ly+3,2,3,Wc);R(lx+12,ly,2,3,Wc);R(lx+12,ly+6,2,3,Wc);R(lx+11,ly+5,1,2,Wc);R(lx-1,ly+11,16,1,W_('#8aa0d0'));ctx.restore();}
+  // huvud
+  const nk=hy+16;R(-3+L,nk,7,4,SK2);
+  RO(-7+L,hy+3,15,15,SK);R(-7+L,hy+14,15,4,SK2);R(5+L,hy+5,3,10,SK2);R(-8+L,hy+8,2,5,SK2);R(-8+L,hy+9,1,3,SK3);// öra
+  R(8+L,hy+10,1,3,SK3);// näsa
+  // skäggstubb + bockskägg
+  for(let yy=0;yy<4;yy++)for(let xx=0;xx<14;xx++)if((xx+yy)%2===0)R(-6+L+xx,hy+13+yy,1,1,yy>1?BE2:BE);
+  R(2+L,hy+17,6,3,BE);R(3+L,hy+19,4,2,BE2);R(-1+L,hy+11,1,3,BE);
+  const ko=['hit','down','ko','dizzy'].includes(f.pose);const mOpen=f.pose==='taunt'||f.pose==='win'||(f.act&&f.act.k==='cb'&&f.act.t<20);
+  if(mOpen){R(3+L,hy+15,5,2,'#5a1a1a');R(4+L,hy+15,3,1,'#fff');}else R(3+L,hy+15,5,1,'#6a3a2a');
+  // glasögon (mörka rektangulära)
+  R(-4+L,hy+7,12,1,'#000');RO(-2+L,hy+8,4,3,W_('#1a1a22'));RO(4+L,hy+8,4,3,W_('#1a1a22'));R(2+L,hy+8,2,1,'#000');R(-7+L,hy+8,4,1,'#000');
+  if(ko){R(-1+L,hy+9,2,1,'#fff');R(5+L,hy+9,2,1,'#fff');}else{R(-1+L,hy+8,1,1,W_('#6a8acc'));R(5+L,hy+8,1,1,W_('#6a8acc'));if((frame>>2)%40<3){R(0+L,hy+9,1,1,'#fff');R(6+L,hy+9,1,1,'#fff');}}
+  R(-1+L,hy+6,3,1,HA2);R(4+L,hy+6,4,1,HA2);// ögonbryn
+  // hår: kort smutsblont, fylligt, taggigt
+  R(-9+L,hy,17,6,'#000');R(-9+L,hy+5,4,6,'#000');R(-8+L,hy+1,15,4,HA);R(-8+L,hy+5,3,5,HA2);R(-8+L,hy+5,1,4,HA);
+  const spikes=[[-8,-1],[-5,-3],[-2,-4],[1,-4],[4,-3],[7,-1]];for(const [sx,sy] of spikes){ctx.fillStyle='#000';ctx.beginPath();ctx.moveTo(sx-3+L,hy+2);ctx.lineTo(sx+L+1,hy+sy-1);ctx.lineTo(sx+3+L,hy+2);ctx.fill();ctx.fillStyle=HA;ctx.beginPath();ctx.moveTo(sx-2+L,hy+2);ctx.lineTo(sx+L+1,hy+sy+0.5);ctx.lineTo(sx+2+L,hy+2);ctx.fill();}
+  R(-6+L,hy,2,2,HA3);R(-2+L,hy-1,3,1,HA4);R(2+L,hy,2,1,HA3);R(-7+L,hy+3,12,1,HA2);R(5+L,hy+2,2,2,HA2);R(-3+L,hy+1,1,2,HA3);
+  // främre arm: ärm + underarm + knytnäve
+  const ax=4+L+p.armF[0],ay=shY+p.armF[1]+3,mx=4+L+p.armF[0]*0.4,my=shY+3+p.armF[1]*0.4;
+  seg(4+L,shY+3,mx,my,6,T);seg(mx,my,ax,ay,4,SK);R(Math.round(mx)-1,Math.round(my)-1,2,1,T2);
+  const punch=(f.pose==='lp'||f.pose==='hp')&&f.ext>0.8;RO(ax-3,ay-3,punch?7:6,punch?7:6,SK);R(ax-3,ay+1,punch?7:6,1,SK2);if(punch){R(ax+2,ay-2,1,4,SK3);ctx.strokeStyle='#ffffffaa';ctx.lineWidth=1;for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(ax-16,ay-3+i*3);ctx.lineTo(ax-6,ay-3+i*3);ctx.stroke();}if(f.pose==='hp')swoosh(4,shY,1,p.armF[0],'#ffcf3a');}
+  if(f.pose==='drink'){drawRedBjurn(ax+1,ay-8,0.7,fl);}
+  ctx.restore();
+  if(f.buff>0&&frame%3===0)part({x:x+rnd(-10,10),y:y-rnd(0,f.ch.H),vx:rnd(-1,1),vy:-1,col:'#ffcf3a',life:12});}
+// RED BJURN-burk (s=skala)
+function drawRedBjurn(cx,cy,s,fl){ctx.save();ctx.translate(cx,cy);ctx.scale(s,s);const w=12,h=24;
+  R(-w/2-1,-h/2-1,w+2,h+2,'#000');R(-w/2,-h/2,w,h,fl?'#fff':'#2348c8');for(let i=0;i<w;i+=4){R(-w/2+i,-h/2+3,2,h-6,'#c8ccd8');}R(-w/2,-h/2+3,w,h-6,'#2348c8cc');
+  for(let i=0;i<w;i+=4)for(let j=0;j<h-6;j+=4)if(((i+j)/4)%2===0)R(-w/2+i,-h/2+3+j,2,2,'#d6dae4');
+  ctx.fillStyle='#ffcf3a';ctx.beginPath();ctx.arc(0,-2,4,0,7);ctx.fill();R(-4,1,8,2,'#e23b3b');R(-w/2,-h/2,w,3,'#c0c6d0');R(-w/2,h/2-3,w,3,'#9aa0aa');R(-2,-h/2-1,4,1,'#888');R(w/2-3,-h/2+3,1,h-6,'#ffffff66');ctx.restore();}
+// större jätteburk vid superdraget
+drawBigCan=function(f){if(!(f.act&&f.act.k==='su'&&f.ch.su.type==='drink'&&f.act.t<60))return;const x=f.x+f.face*10,y=f.y-f.ch.H-10;ctx.save();ctx.translate(x,y);ctx.rotate(-0.45*f.face);drawRedBjurn(0,-18,2.1,false);
+  for(let i=0;i<4;i++)R(-10+((i*7+frame)%20),-30+i*9,1,2,'#bff4ff');ctx.restore();bigTxt('RED BJURN',x,y-66,1,'#ffcf3a','#e23b3b');txt('TË JEP KRAHË!',x,y-56,'#fff',1,'center','#000');};
+// Albanska tankar (bara albanska + ibland symboler)
+CH('ferdi').thoughts=['FALËMINDERIT!','SHUMË MIRË!','HAJDE!','MIRUPAFSHIM!','KU ËSHTË RED BJURN-I IM?','JAM I FORTË!','UJKU!','BUKUR!','HAJT, SHPEJT!','OJ OJ OJ!','KAFE?','ANI MO!',"Ç'KEMI?",'@#?! UAU!','HAJDE @#!','ÇOKOLLATË?!'];
+// pratbubblor: 'ALBANSKA|SVENSKA'
+TAUNTS.ferdi=['HAJDE, HAJDE!|KOM IGEN, KOM IGEN!','JAM I FORTË!|JAG ÄR STARK!','KU ËSHTË RED BJURN-I IM?|VAR ÄR MIN RED BJURN?','ANI MO!|NÄMEN DÅ!','OJ OJ OJ!|OJ OJ OJ!'];
+WINQ.ferdi=['FITOVA! FALËMINDERIT!|JAG VANN! TACK!','SHUMË MIRË! EDHE NJË KANAÇE?|MYCKET BRA! EN BURK TILL?','MIRUPAFSHIM!|HEJ DÅ!','JAM ENDE PLOT ENERGJI!|JAG ÄR FORTFARANDE FULL AV ENERGI!'];
+CH('ferdi').quote='FITOVA! FALËMINDERIT!';
+const FERDI_SHOUT={lpk:'SHKUMË!|SKUM!',hpk:'SHI KANAÇESH!|BURKREGN!',lph:'SHPEJT!|SNABBT!',spb:'HAJDE!|KOM IGEN!',dlpk:'NJË, DY, TRE!|ETT, TVÅ, TRE!',dhpk:'JAM I FORTË!|JAG ÄR STARK!',su:'RED BJURN TË JEP KRAHË!|RED BJURN GER DIG VINGAR!'};
+function bubbleSplit(s){const i=String(s).indexOf('|');return i<0?[s,null]:[s.slice(0,i),s.slice(i+1)];}
 
 </script>
 </body>
