@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#090d18">
+<title>8BIT STORE KART – Love & Sigge</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:#090d18;color:#fff;font-family:monospace;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+.wrap{max-width:960px;margin:0 auto;height:100%;display:flex;flex-direction:column;padding:8px}
+h1{color:#ffd84a;text-shadow:3px 3px #8f3150;font-size:clamp(18px,5vw,28px);text-align:center;margin:4px 0}
+h2{font-size:14px;color:#aeb8d0;margin:6px 0}
+.pick{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;flex:1;overflow-y:auto;padding:4px}
+.card{background:#17213a;border:3px solid #354468;padding:6px;cursor:pointer;border-radius:8px;transition:.15s}
+.card.sel{border-color:#ffd84a;box-shadow:0 0 12px #ffd84a66;transform:scale(1.04)}
+.card img,.card .ph{width:100%;height:90px;object-fit:cover;image-rendering:pixelated;border-radius:4px;background:#0d1424}
+.card .ph{display:grid;place-items:center;font-size:32px;font-weight:bold}
+.card b{display:block;margin-top:4px;font-size:12px;text-align:center}
+button{font:700 16px monospace;padding:12px 16px;border:0;background:#ffd84a;color:#161616;margin:4px;border-radius:8px;cursor:pointer}
+button:active{transform:scale(.96)}
+#start{width:100%;max-width:320px;margin:8px auto;display:block;font-size:18px}
+canvas{width:100%;max-height:58vh;background:#70bbed;image-rendering:pixelated;border:4px solid #1a2030;border-radius:6px;display:block;margin:0 auto}
+.hide{display:none!important}
+.controls{display:flex;justify-content:center;gap:6px;margin-top:6px}
+.controls button{flex:1;max-width:140px;padding:14px 8px;font-size:15px}
+#hud{font-size:13px;letter-spacing:.5px;text-align:center;min-height:22px;padding:2px;background:#0d1424aa;border-radius:4px;margin-bottom:4px}
+.note{color:#7a849c;font-size:11px;text-align:center;margin-top:6px}
+#overlay{position:fixed;inset:0;background:#000c;display:flex;align-items:center;justify-content:center;z-index:10;flex-direction:column;gap:12px}
+#overlay h2{font-size:28px;color:#ffd84a;text-shadow:2px 2px #000}
+#overlay p{color:#ccc}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>8BIT STORE KART</h1>
+  <section id="menu">
+    <h2>VÄLJ FÖRARE</h2>
+    <div class="pick" id="pick"></div>
+    <button id="start">STARTA RACE</button>
+    <p class="note">Piltangenter / A-D / ◀ ▶  ·  Space / BOOST  ·  Love & Sigge har dina foton</p>
+  </section>
+  <section id="game" class="hide">
+    <div id="hud"></div>
+    <canvas id="c" width="640" height="420"></canvas>
+    <div class="controls">
+      <button id="left">◀ VÄNSTER</button>
+      <button id="boost">BOOST</button>
+      <button id="right">HÖGER ▶</button>
+    </div>
+    <button id="back" style="width:100%;max-width:200px;margin:6px auto;display:block;background:#354468;color:#fff">FÖRARVAL</button>
+  </section>
+</div>
+<div id="overlay" class="hide">
+  <h2 id="ovTitle">MÅL!</h2>
+  <p id="ovMsg"></p>
+  <button id="ovAgain">KÖR IGEN</button>
+  <button id="ovMenu" style="background:#354468;color:#fff">MENY</button>
+</div>
+
+<script>
+const RACERS = [
+  {name:'FERDI',  col:'#111',    accent:'#5ec8ff', photo:'',                    sprite:'ferdi'},
+  {name:'ANNIE',  col:'#d77fd7', accent:'#ffe26b', photo:'',                    sprite:'annie'},
+  {name:'BALTO',  col:'#c98a52', accent:'#61c779', photo:'',                    sprite:'balto'},
+  {name:'MICHAEL',col:'#8359c9', accent:'#ffb9d7', photo:'',                    sprite:'michael'},
+  {name:'BOBBAN', col:'#61744a', accent:'#b99a5d', photo:'',                    sprite:'bobban'},
+  {name:'SIGGE',  col:'#2671b8', accent:'#64dbff', photo:'assets/sigge.jpg',    sprite:'sigge'},
+  {name:'LOVE',   col:'#663f23', accent:'#fd9658', photo:'assets/love.jpg',     sprite:'love'},
+  {name:'MILA',   col:'#ff8fb9', accent:'#fff0f5', photo:'',                    sprite:'mila'}
+];
+
+const frameCache = {};
+function getFrame(name, state) {
+  const k = name.toLowerCase() + '_' + state;
+  if (!frameCache[k]) {
+    const im = new Image();
+    im.src = 'assets/sprites/' + k + '.png';
+    frameCache[k] = im;
+  }
+  return frameCache[k];
+}
+
+let sel = 5;
+let playing = false;
+let lane = 0, speed = 0.85, dist = 0, coins = 0, lap = 1, item = 'INGET', place = 1;
+let steer = 'straight', steerUntil = 0, accelUntil = 0;
+let aiCars = [];
+let keys = {};
+let finishTriggered = false;
+
+const pick = document.querySelector('#pick');
+const hud = document.querySelector('#hud');
+const game = document.querySelector('#game');
+const menuEl = document.querySelector('#menu');
+const overlay = document.querySelector('#overlay');
+const cv = document.querySelector('#c');
+const ctx = cv.getContext('2d');
+
+function buildMenu() {
+  pick.innerHTML = RACERS.map((r, i) => {
+    const img = r.photo
+      ? `<img src="${r.photo}" alt="${r.name}">`
+      : `<div class="ph" style="background:${r.col}">${r.name[0]}</div>`;
+    return `<div class="card ${i===sel?'sel':''}" data-i="${i}">${img}<b>${r.name}</b></div>`;
+  }).join('');
+  [...pick.children].forEach(el => {
+    el.onclick = () => { sel = +el.dataset.i; buildMenu(); };
+  });
+}
+buildMenu();
+
+function resetRace() {
+  dist = 0; speed = 0.85; lane = 0; lap = 1; coins = 0; item = 'INGET'; place = 1;
+  steer = 'straight'; steerUntil = 0; accelUntil = 0; finishTriggered = false;
+  aiCars = [
+    {lane: -0.4, dist: 2.2, speed: 0.78, col: '#e44'},
+    {lane:  0.35, dist: 3.8, speed: 0.72, col: '#5cf'},
+    {lane: -0.15, dist: 5.5, speed: 0.68, col: '#fc4'},
+    {lane:  0.55, dist: 1.1, speed: 0.81, col: '#b5f'}
+  ];
+}
+
+document.querySelector('#start').onclick = () => {
+  menuEl.classList.add('hide');
+  game.classList.remove('hide');
+  overlay.classList.add('hide');
+  playing = true;
+  resetRace();
+  loop();
+};
+
+document.querySelector('#back').onclick = () => {
+  playing = false;
+  game.classList.add('hide');
+  menuEl.classList.remove('hide');
+  overlay.classList.add('hide');
+};
+
+document.querySelector('#ovAgain').onclick = () => {
+  overlay.classList.add('hide');
+  playing = true;
+  resetRace();
+  loop();
+};
+
+document.querySelector('#ovMenu').onclick = () => {
+  overlay.classList.add('hide');
+  game.classList.add('hide');
+  menuEl.classList.remove('hide');
+  playing = false;
+};
+
+function doSteer(dir) {
+  if (dir === 'left') {
+    lane = Math.max(-0.85, lane - 0.22);
+    steer = 'left';
+  } else {
+    lane = Math.min(0.85, lane + 0.22);
+    steer = 'right';
+  }
+  steerUntil = performance.now() + 280;
+}
+
+function doBoost() {
+  accelUntil = performance.now() + 480;
+  if (item === 'TURBO') {
+    speed = Math.min(2.6, speed + 0.9);
+    item = 'INGET';
+  } else {
+    speed = Math.min(2.15, speed + 0.35);
+  }
+}
+
+document.querySelector('#left').onclick  = () => doSteer('left');
+document.querySelector('#right').onclick = () => doSteer('right');
+document.querySelector('#boost').onclick = () => doBoost();
+
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['ArrowLeft','KeyA'].includes(e.code)) doSteer('left');
+  if (['ArrowRight','KeyD'].includes(e.code)) doSteer('right');
+  if (['Space','KeyW','ArrowUp'].includes(e.code)) { e.preventDefault(); doBoost(); }
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+function drawRoad() {
+  ctx.fillStyle = '#69bced';
+  ctx.fillRect(0, 0, 640, 160);
+  ctx.fillStyle = '#4a9a3a';
+  ctx.fillRect(0, 160, 640, 260);
+  const curve = lane * 18;
+  ctx.fillStyle = '#505159';
+  ctx.beginPath();
+  ctx.moveTo(250 + curve, 160);
+  ctx.lineTo(40, 420);
+  ctx.lineTo(600, 420);
+  ctx.lineTo(390 + curve, 160);
+  ctx.fill();
+  ctx.strokeStyle = '#e8e8e8';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(250 + curve, 160); ctx.lineTo(40, 420);
+  ctx.moveTo(390 + curve, 160); ctx.lineTo(600, 420);
+  ctx.stroke();
+  for (let i = 0; i < 12; i++) {
+    const t = (i + (dist * 9 % 1)) / 12;
+    const y = 165 + t * 255;
+    const w = 8 + t * 18;
+    const cx = 320 + curve * (1 - t);
+    ctx.fillStyle = (Math.floor(dist * 6 + i) % 2 === 0) ? '#fff' : '#e33';
+    ctx.fillRect(cx - w/2, y, w, 14 + t * 10);
+  }
+  for (let i = 0; i < 6; i++) {
+    const z = ((i * 0.18 + dist * 0.014) % 1);
+    const y = 170 + z * 220;
+    const spread = 55 + z * 220;
+    const xxL = 320 - spread + curve * (1 - z);
+    const xxR = 320 + spread + curve * (1 - z);
+    const s = 10 + z * 22;
+    ctx.fillStyle = '#2d6b2a';
+    ctx.fillRect(xxL - s, y - s*1.4, s*2, s*1.8);
+    ctx.fillRect(xxR - s, y - s*1.4, s*2, s*1.8);
+    ctx.fillStyle = '#8b5a2b';
+    ctx.fillRect(xxL - 3, y, 6, s);
+    ctx.fillRect(xxR - 3, y, 6, s);
+  }
+}
+
+function drawAI() {
+  aiCars.forEach(ai => {
+    ai.dist += ai.speed * 0.022;
+    if (Math.random() < 0.008) ai.lane += (Math.random() - 0.5) * 0.3;
+    ai.lane = Math.max(-0.8, Math.min(0.8, ai.lane));
+    const rel = ai.dist - dist;
+    if (rel < -1 || rel > 14) return;
+    const z = Math.max(0.05, Math.min(1, 1 - rel / 12));
+    const y = 170 + (1 - z) * 200;
+    const px = 320 + ai.lane * (90 + (1 - z) * 160) + lane * 12;
+    const w = 28 + (1 - z) * 55;
+    const h = 18 + (1 - z) * 35;
+    ctx.fillStyle = ai.col;
+    ctx.fillRect(px - w/2, y - h, w, h);
+    ctx.fillStyle = '#222';
+    ctx.fillRect(px - w*0.35, y - h*0.7, w*0.7, h*0.35);
+  });
+}
+
+function drawPlayer() {
+  const r = RACERS[sel];
+  const px = 320 + lane * 210;
+  if (performance.now() > steerUntil) steer = 'straight';
+  const state = performance.now() < accelUntil ? 'accel' : steer;
+  const sp = getFrame(r.sprite, state);
+  if (sp.complete && sp.naturalWidth) {
+    ctx.drawImage(sp, px - 64, 290, 128, 128);
+  } else {
+    ctx.fillStyle = r.accent;
+    ctx.fillRect(px - 42, 340, 84, 40);
+    ctx.fillStyle = r.col;
+    ctx.fillRect(px - 28, 315, 56, 35);
+  }
+  if (performance.now() < accelUntil) {
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = `rgba(255,${180+i*10},50,${0.6 - i*0.1})`;
+      ctx.fillRect(px - 20 + Math.random()*40, 400 + Math.random()*15, 6, 10);
+    }
+  }
+}
+
+function updateLogic() {
+  if (keys['ArrowLeft'] || keys['KeyA']) { lane = Math.max(-0.85, lane - 0.035); steer = 'left'; steerUntil = performance.now() + 120; }
+  if (keys['ArrowRight'] || keys['KeyD']) { lane = Math.min(0.85, lane + 0.035); steer = 'right'; steerUntil = performance.now() + 120; }
+
+  speed = Math.max(0.45, speed * 0.9975);
+  dist += speed * 0.028;
+
+  if (Math.floor(dist * 2.2) % 19 === 0 && item === 'INGET') {
+    item = ['TURBO', 'SKÖLD', 'MYNT', 'TURBO'][Math.floor(dist) % 4];
+  }
+  if (item === 'MYNT') { coins += 3; item = 'INGET'; }
+
+  lap = Math.min(3, Math.floor(dist / 9) + 1);
+
+  let better = 0;
+  aiCars.forEach(ai => { if (ai.dist > dist) better++; });
+  place = 1 + better;
+
+  aiCars.forEach(ai => {
+    const rel = Math.abs(ai.dist - dist);
+    if (rel < 0.45 && Math.abs(ai.lane - lane) < 0.28) {
+      if (item === 'SKÖLD') { item = 'INGET'; ai.speed *= 0.6; }
+      else { speed *= 0.72; }
+    }
+  });
+
+  hud.textContent = `${RACERS[sel].name}  ·  VARV ${lap}/3  ·  PLATS ${place}/5  ·  FART ${Math.round(speed*100)}  ·  ★ ${coins}  ·  ITEM ${item}`;
+
+  if (dist >= 27 && !finishTriggered) {
+    finishTriggered = true;
+    playing = false;
+    const title = place === 1 ? '🏆 1:A PLATS!' : place === 2 ? 'SILVER!' : place === 3 ? 'BRONS!' : 'MÅL!';
+    document.querySelector('#ovTitle').textContent = title;
+    document.querySelector('#ovMsg').textContent = `${RACERS[sel].name}  ·  ★ ${coins} mynt  ·  Plats ${place}/5`;
+    overlay.classList.remove('hide');
+  }
+}
+
+function loop() {
+  if (!playing) return;
+  updateLogic();
+  drawRoad();
+  drawAI();
+  drawPlayer();
+  requestAnimationFrame(loop);
+}
+
+RACERS.forEach(r => {
+  ['straight','left','right','accel'].forEach(s => getFrame(r.sprite, s));
+});
+</script>
+</body>
+</html>
